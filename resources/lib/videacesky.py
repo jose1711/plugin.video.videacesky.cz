@@ -50,6 +50,8 @@ class VideaceskyContentProvider(ContentProvider):
             return self.list_top10(util.request(self.base_url+url))
         if url.find("#related#") == 0:
             return self.list_related(util.request(url[9:]))
+        elif url.find('#pageselector#') == 0:
+            return self.list_pages()
         else:
             return self.list_content(util.request(self._url(url)), self._url(url))
 
@@ -58,6 +60,10 @@ class VideaceskyContentProvider(ContentProvider):
 
     def categories(self):
         result = []
+        item = self.dir_item()
+        item['title'] = 'Select page'
+        item['url'] = '#pageselector#'
+        result.append(item)
         item = self.dir_item()
         item['type'] = 'new'
         item['url'] = "?orderby=post_date"
@@ -138,6 +144,19 @@ class VideaceskyContentProvider(ContentProvider):
             item['img'] = m.group('img')
             item['url'] = m.group('url')
             self._filter(result, item)
+        return result
+
+    def list_pages(self):
+        result = []
+        last_page = util.request(self.base_url + '9999')
+        data = re.search("currentUrl = '/([0-9]+)", last_page)
+        last_page = int(data.group(1))
+        # currentUrl = '/201'
+        for pagenum in range(1, last_page+1):
+            item = self.dir_item()
+            item['title'] = str(pagenum)
+            item['url'] = '/%s' % pagenum
+            result.append(item)
         return result
 
     def format_title(self, m):
